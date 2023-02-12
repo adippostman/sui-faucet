@@ -1,8 +1,6 @@
-import axios from "axios";
+import fetch from "node-fetch";
 import moment from "moment";
 import UserAgent from "user-agents";
-import * as dotenv from "dotenv";
-dotenv.config();
 import data from "./data.js";
 
 const discord = {
@@ -26,22 +24,23 @@ const aconsole = (text, newLine = false) => {
 };
 
 const getMe = async (token) => {
-    const get = await axios.get(discord.endpoint + "/users/@me", {
+    const get = await fetch(discord.endpoint + "/users/@me", {
         headers: {
             Authorization: token,
             "User-Agent": new UserAgent().toString(),
         },
     });
-    return get.data;
+    return await get.json();
 };
 
 const sendMessages = async (text, token) => {
-    const post = await axios.post(
+    const post = await fetch(
         discord.endpoint + "/channels/" + discord.channelId + "/messages",
-        JSON.stringify({
-            content: text,
-        }),
         {
+            method: "post",
+            body: JSON.stringify({
+                content: text,
+            }),
             headers: {
                 Authorization: token,
                 "User-Agent": new UserAgent().toString(),
@@ -49,24 +48,20 @@ const sendMessages = async (text, token) => {
             },
         }
     );
-    return post.data.id ? post.data : false;
+    return await post.json();
 };
 
 (async () => {
     while (true) {
-        for (let [index, { token, address }] of data.entries()) {
+        for (let { no, token, address } of data) {
             const me = await getMe(token);
-            aconsole(
-                `[${index + 1}] username ${me.username}#${me.discriminator}`
-            );
-
-            const send = await sendMessages(`!faucet ${address}`, token);
-            send && send.id
-                ? aconsole(`success send message to channel`, true)
-                : aconsole(`failed unknown error or rate limits`, true);
-            await delay(3000);
+            aconsole(`(${no}) username ${me.username}#${me.discriminator}`);
+            console.log(await sendMessages(`!faucet ${address}`, token));
+            await delay(5000);
+            console.log(await sendMessages(`!faucet ${address}`, token));
+            await delay(5000);
         }
-
+        console.log("");
         aconsole(`delay for ${discord.delay / 1000} seconds`);
         await delay(discord.delay);
     }
