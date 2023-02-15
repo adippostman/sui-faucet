@@ -55,11 +55,17 @@ const sendMessages = async (text, token) => {
     while (true) {
         for (let { no, token, address } of data) {
             const me = await getMe(token);
-            aconsole(`(${no}) username ${me.username}#${me.discriminator}`);
-            console.log(await sendMessages(`!faucet ${address}`, token));
-            await delay(5000);
-            console.log(await sendMessages(`!faucet ${address}`, token));
-            await delay(5000);
+            while (true) {
+                aconsole(`(${no}) username ${me.username}#${me.discriminator}`);
+                const send = await sendMessages(`!faucet ${address}`, token);
+                console.log(send);
+
+                if (send.id) {
+                    break;
+                } else {
+                    await delay(5000);
+                }
+            }
         }
         console.log("");
         aconsole(`delay for ${discord.delay / 1000} seconds`);
